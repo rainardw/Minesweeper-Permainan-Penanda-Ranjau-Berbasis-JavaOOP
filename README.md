@@ -1,2 +1,5 @@
 # Minesweeper-Permainan-Penanda-Ranjau-Berbasis-Java
 Anggota Kelompok 18:
+1. KURNIA DWI SURYA F1D02310013
+2. GIAN KAUSARI F1D02310053
+3. R. RAFI YUDI PRAMANA F1D02310132
