@@ -5,8 +5,15 @@ public class Game {
     private Difficulty difficulty;
     private GameState gameState;
     private boolean firstClick;
-    private int finalScore;
+    
+    private int currentScore; // Skor saat ini (akumulasi kotak terbuka)
+    private int finalScore;   // Skor akhir (setelah dikali rumus)
+    
     private GameListener listener;
+    
+    // Konstanta Logika Baru
+    private static final int GAME_DURATION = 600; // 10 Menit
+    private static final int POINTS_PER_CELL = 10; // Poin per kotak
     
     public enum GameState {
         NOT_STARTED,
@@ -18,7 +25,7 @@ public class Game {
     
     public interface GameListener {
         void onGameStateChanged(GameState newState);
-        void onScoreCalculated(int score);
+        void onScoreUpdated(int score); // Listener untuk update UI real-time
         void onCellRevealed(int row, int col);
     }
     
@@ -28,16 +35,17 @@ public class Game {
         this.listener = listener;
         this.gameState = GameState.NOT_STARTED;
         this.firstClick = true;
+        this.currentScore = 0;
         this.finalScore = 0;
         
         // Initialize board
         board = new Board(difficulty);
         
-        // Initialize timer
-        timer = new GameTimer(difficulty.getTimeLimit(), new GameTimer.GameTimerListener() {
+        // Initialize timer (Fixed 600 detik)
+        timer = new GameTimer(GAME_DURATION, new GameTimer.GameTimerListener() {
             @Override
-            public void onTimerUpdate(int elapsedTime) {
-                // Timer update handled by UI
+            public void onTimerUpdate(int remainingTime) {
+                // UI update ditangani oleh GameFrame melalui polling atau listener terpisah
             }
             
             @Override
@@ -45,11 +53,6 @@ public class Game {
                 handleTimeUp();
             }
         });
-    }
-    
-    public void startGame() {
-        gameState = GameState.PLAYING;
-        notifyGameStateChanged();
     }
     
     public void handleCellClick(int row, int col, boolean isRightClick) {
@@ -60,16 +63,16 @@ public class Game {
         Cell cell = board.getCell(row, col);
         if (cell == null) return;
         
+        // Klik Kanan (Flag)
         if (isRightClick) {
-            // Right click - toggle flag
             board.toggleFlag(row, col);
             return;
         }
         
-        // Left click - reveal cell
-        if (cell.isFlagged()) return;
+        // Jangan lakukan apa-apa jika sudah terbuka atau dibendera
+        if (cell.isRevealed() || cell.isFlagged()) return;
         
-        // First click - start timer and place bombs
+        // Klik Pertama: Generate Bom & Mulai Timer
         if (firstClick) {
             board.placeBombs(row, col);
             timer.start();
@@ -78,20 +81,33 @@ public class Game {
             notifyGameStateChanged();
         }
         
-        // Check if clicked on bomb
+        // Cek kena Bom
         if (cell.isBomb()) {
             handleLoss();
             return;
         }
         
-        // Reveal cell
+        // --- LOGIKA SKOR REAL-TIME ---
+        int cellsBefore = board.getRevealedCells();
+        
+        // Buka sel (bisa recursive flood fill)
         board.revealCell(row, col);
         
-        if (listener != null) {
-            listener.onCellRevealed(row, col);
+        int cellsAfter = board.getRevealedCells();
+        int openedCount = cellsAfter - cellsBefore;
+        
+        if (openedCount > 0) {
+            // Update skor: 10 poin per kotak
+            currentScore += (openedCount * POINTS_PER_CELL);
+            
+            // Beritahu UI untuk update label skor
+            if (listener != null) {
+                listener.onScoreUpdated(currentScore);
+                listener.onCellRevealed(row, col);
+            }
         }
         
-        // Check win condition
+        // Cek Menang
         if (board.isWin()) {
             handleWin();
         }
@@ -100,8 +116,8 @@ public class Game {
     private void handleWin() {
         gameState = GameState.WON;
         timer.stopTimer();
-        calculateScore();
-        saveScore();
+        calculateFinalScore();
+        saveScore(); // Simpan ke Database
         notifyGameStateChanged();
     }
     
@@ -109,7 +125,7 @@ public class Game {
         gameState = GameState.LOST;
         timer.stopTimer();
         board.revealAllBombs();
-        finalScore = 0;
+        finalScore = 0; // Kalah dapat 0
         notifyGameStateChanged();
     }
     
@@ -122,22 +138,23 @@ public class Game {
         }
     }
     
-    private void calculateScore() {
-        // Score formula: (remaining time + revealed cells) * 5
+    // Rumus: (Sisa Waktu + Skor Saat Ini) * 5
+    private void calculateFinalScore() {
         int remainingTime = timer.getRemainingTime();
-        int revealedCells = board.getRevealedCells();
-        
-        finalScore = (remainingTime + revealedCells) * 5;
-        
-        if (listener != null) {
-            listener.onScoreCalculated(finalScore);
-        }
+        finalScore = (remainingTime + currentScore) * 5;
     }
     
     private void saveScore() {
         PlayerDatabase database = PlayerDatabase.getInstance();
-        database.updatePlayerScore(player.getIdPlayer(), finalScore);
-        player.setHighScore(finalScore);
+        
+        // 1. Simpan History
+        database.addGameHistory(player.getIdPlayer(), finalScore);
+        
+        // 2. Update High Score Lokal & DB
+        int latestHighScore = database.getHighScoreFromHistory(player.getIdPlayer());
+        player.setHighScore(latestHighScore);
+        
+        System.out.println("Saved Score: " + finalScore);
     }
     
     public void pauseGame() {
@@ -159,27 +176,11 @@ public class Game {
     }
     
     // Getters
-    public Player getPlayer() {
-        return player;
-    }
-    
-    public Board getBoard() {
-        return board;
-    }
-    
-    public GameTimer getTimer() {
-        return timer;
-    }
-    
-    public GameState getGameState() {
-        return gameState;
-    }
-    
-    public int getFinalScore() {
-        return finalScore;
-    }
-    
-    public Difficulty getDifficulty() {
-        return difficulty;
-    }
+    public Player getPlayer() { return player; }
+    public Board getBoard() { return board; }
+    public GameTimer getTimer() { return timer; }
+    public GameState getGameState() { return gameState; }
+    public int getCurrentScore() { return currentScore; }
+    public int getFinalScore() { return finalScore; }
+    public Difficulty getDifficulty() { return difficulty; }
 }

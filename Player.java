@@ -1,5 +1,5 @@
 public class Player {
-    private int idPlayer;
+    private int idPlayer; // Menggunakan int, bukan kelas Id_player
     private String username;
     private String password;
     private int highScore;
@@ -11,7 +11,6 @@ public class Player {
         this.highScore = 0;
     }
     
-    // Getters
     public int getIdPlayer() {
         return idPlayer;
     }
@@ -28,7 +27,6 @@ public class Player {
         return highScore;
     }
     
-    // Setters
     public void setHighScore(int score) {
         if (score > this.highScore) {
             this.highScore = score;

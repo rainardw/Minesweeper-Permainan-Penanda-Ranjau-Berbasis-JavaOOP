@@ -18,7 +18,7 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
         this.player = player;
         this.difficulty = difficulty;
         
-        setTitle("Minesweeper - " + difficulty.name());
+        setTitle("Minesweeper - " + difficulty.name() + " [" + player.getUsername() + "]");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
         
@@ -31,57 +31,56 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
     }
     
     private void initGame() {
+        // Timer listener dihandle oleh Frame ini
         game = new Game(player, difficulty, this);
+        // Daftarkan frame ini sebagai listener timer juga untuk update label waktu
+        game.getTimer().setListener(this); 
     }
     
     private void initComponents() {
         setLayout(new BorderLayout());
         
+        // --- TOP PANEL ---
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
-        topPanel.setBackground(new Color(200, 200, 200));
+        topPanel.setBackground(new Color(230, 230, 230));
         
-        timerLabel = new JLabel("Time: 00:00");
-        timerLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        timerLabel = new JLabel("Time: 10:00"); // Default start
+        timerLabel.setFont(new Font("Monospaced", Font.BOLD, 18));
         
         bombsLabel = new JLabel("Bombs: " + difficulty.getBombCount());
         bombsLabel.setFont(new Font("Arial", Font.BOLD, 16));
         
         scoreLabel = new JLabel("Score: 0");
         scoreLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        scoreLabel.setForeground(new Color(0, 100, 0));
         
         topPanel.add(timerLabel);
         topPanel.add(bombsLabel);
         topPanel.add(scoreLabel);
         
+        // --- GAME PANEL ---
         gamePanel = new GamePanel(game);
         
+        // --- BOTTOM PANEL ---
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
         
         restartButton = new JButton("Restart");
         menuButton = new JButton("Menu");
         
-        restartButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                restartGame();
-            }
-        });
+        restartButton.addActionListener(e -> restartGame());
         
-        menuButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                int confirm = JOptionPane.showConfirmDialog(
-                    GameFrame.this,
-                    "Are you sure you want to quit to menu?",
-                    "Confirm",
-                    JOptionPane.YES_NO_OPTION
-                );
-                
-                if (confirm == JOptionPane.YES_OPTION) {
-                    game.getTimer().stopTimer();
-                    dispose();
-                    new MenuFrame(player);
-                }
+        menuButton.addActionListener(e -> {
+            int confirm = JOptionPane.showConfirmDialog(
+                GameFrame.this,
+                "Quit to Menu?",
+                "Confirm",
+                JOptionPane.YES_NO_OPTION
+            );
+            
+            if (confirm == JOptionPane.YES_OPTION) {
+                game.getTimer().stopTimer();
+                dispose();
+                new MenuFrame(player);
             }
         });
         
@@ -99,10 +98,12 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
         gamePanel.setGame(game);
         gamePanel.repaint();
         
-        timerLabel.setText("Time: 00:00");
+        timerLabel.setText("Time: 10:00");
         scoreLabel.setText("Score: 0");
         bombsLabel.setText("Bombs: " + difficulty.getBombCount());
     }
+    
+    // --- IMPLEMENTASI GameListener ---
     
     @Override
     public void onGameStateChanged(Game.GameState newState) {
@@ -110,31 +111,36 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
             case WON:
                 gamePanel.repaint();
                 JOptionPane.showMessageDialog(this,
-                    "Congratulations! You won!\nScore: " + game.getFinalScore(),
-                    "Victory!",
+                    "VICTORY!\n\n" +
+                    "Base Score: " + game.getCurrentScore() + "\n" +
+                    "Time Bonus: " + game.getTimer().getRemainingTime() + "\n" +
+                    "Formula: (Score + Time) * 5\n" +
+                    "--------------------\n" +
+                    "FINAL SCORE: " + game.getFinalScore(),
+                    "Congratulations",
                     JOptionPane.INFORMATION_MESSAGE);
                 break;
                 
             case LOST:
                 gamePanel.repaint();
                 JOptionPane.showMessageDialog(this,
-                    "Game Over! You hit a bomb!",
-                    "Defeat",
+                    "BOOM! You hit a bomb.\nScore: 0",
+                    "Game Over",
                     JOptionPane.ERROR_MESSAGE);
                 break;
                 
             case TIME_UP:
                 gamePanel.repaint();
                 JOptionPane.showMessageDialog(this,
-                    "Time's up! Game Over!",
-                    "Time Up",
+                    "Time is up!\nScore: 0",
+                    "Game Over",
                     JOptionPane.WARNING_MESSAGE);
                 break;
         }
     }
     
     @Override
-    public void onScoreCalculated(int score) {
+    public void onScoreUpdated(int score) {
         scoreLabel.setText("Score: " + score);
     }
     
@@ -144,19 +150,26 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
         updateBombsLabel();
     }
     
+    // --- IMPLEMENTASI GameTimerListener ---
+    
     @Override
-    public void onTimerUpdate(int elapsedTime) {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                timerLabel.setText("Time: " + game.getTimer().getFormattedTime());
+    public void onTimerUpdate(int remainingTime) {
+        // Pastikan update UI dilakukan di Event Dispatch Thread
+        SwingUtilities.invokeLater(() -> {
+            timerLabel.setText("Time: " + game.getTimer().getFormattedTime());
+            
+            // Ubah warna merah jika waktu < 1 menit
+            if (remainingTime <= 60) {
+                timerLabel.setForeground(Color.RED);
+            } else {
+                timerLabel.setForeground(Color.BLACK);
             }
         });
     }
     
     @Override
     public void onTimeUp() {
-        // Handled in onGameStateChanged
+        // Handled by onGameStateChanged via Game class
     }
     
     private void updateBombsLabel() {

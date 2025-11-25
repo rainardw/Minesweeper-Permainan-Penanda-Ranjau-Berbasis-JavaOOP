@@ -1,18 +1,18 @@
 public class GameTimer extends Thread {
-    private int elapsedTime;
+    private int remainingTime; // Waktu tersisa
     private int timeLimit;
     private boolean running;
     private boolean paused;
     private GameTimerListener listener;
     
     public interface GameTimerListener {
-        void onTimerUpdate(int elapsedTime);
+        void onTimerUpdate(int remainingTime);
         void onTimeUp();
     }
     
-    public GameTimer(int timeLimit, GameTimerListener listener) {
-        this.timeLimit = timeLimit;
-        this.elapsedTime = 0;
+    public GameTimer(int timeLimitInSeconds, GameTimerListener listener) {
+        this.timeLimit = timeLimitInSeconds;
+        this.remainingTime = timeLimitInSeconds;
         this.running = false;
         this.paused = false;
         this.listener = listener;
@@ -22,17 +22,18 @@ public class GameTimer extends Thread {
     public void run() {
         running = true;
         
-        while (running && elapsedTime < timeLimit) {
+        while (running && remainingTime > 0) {
             if (!paused) {
                 try {
-                    Thread.sleep(1000); // 1 second
-                    elapsedTime++;
+                    Thread.sleep(1000); // Tunggu 1 detik
+                    remainingTime--;    // Kurangi waktu
                     
                     if (listener != null) {
-                        listener.onTimerUpdate(elapsedTime);
+                        listener.onTimerUpdate(remainingTime);
                     }
                     
-                    if (elapsedTime >= timeLimit) {
+                    if (remainingTime <= 0) {
+                        running = false;
                         if (listener != null) {
                             listener.onTimeUp();
                         }
@@ -42,12 +43,16 @@ public class GameTimer extends Thread {
                 }
             } else {
                 try {
-                    Thread.sleep(100);
+                    Thread.sleep(100); // Sedikit delay saat pause
                 } catch (InterruptedException e) {
                     running = false;
                 }
             }
         }
+    }
+
+    public void setListener(GameTimerListener listener) {
+        this.listener = listener;
     }
     
     public void pauseTimer() {
@@ -62,32 +67,17 @@ public class GameTimer extends Thread {
         running = false;
     }
     
-    public int getElapsedTime() {
-        return elapsedTime;
-    }
-    
     public int getRemainingTime() {
-        return timeLimit - elapsedTime;
+        return remainingTime;
     }
     
     public String getFormattedTime() {
-        int minutes = elapsedTime / 60;
-        int seconds = elapsedTime % 60;
-        return String.format("%02d:%02d", minutes, seconds);
-    }
-    
-    public String getFormattedRemainingTime() {
-        int remaining = getRemainingTime();
-        int minutes = remaining / 60;
-        int seconds = remaining % 60;
+        int minutes = remainingTime / 60;
+        int seconds = remainingTime % 60;
         return String.format("%02d:%02d", minutes, seconds);
     }
     
     public boolean isRunning() {
         return running;
-    }
-    
-    public boolean isPaused() {
-        return paused;
     }
 }
