@@ -1,4 +1,4 @@
-public class Game {
+class Game {
     private Player player;
     private Board board;
     private GameTimer timer;
@@ -12,7 +12,7 @@ public class Game {
     private GameListener listener;
     
     // Konstanta Logika Baru
-    private static final int GAME_DURATION = 600; // 10 Menit
+    private int GAME_DURATION = 600; // 10 Menit
     private static final int POINTS_PER_CELL = 10; // Poin per kotak
     
     public enum GameState {
@@ -27,6 +27,7 @@ public class Game {
         void onGameStateChanged(GameState newState);
         void onScoreUpdated(int score); // Listener untuk update UI real-time
         void onCellRevealed(int row, int col);
+        void onFlagsUpdated(int flags);
     }
     
     public Game(Player player, Difficulty difficulty, GameListener listener) {
@@ -37,6 +38,7 @@ public class Game {
         this.firstClick = true;
         this.currentScore = 0;
         this.finalScore = 0;
+        this.GAME_DURATION = Math.max(1, this.difficulty.getTimeLimit());
         
         // Initialize board
         board = new Board(difficulty);
@@ -66,6 +68,9 @@ public class Game {
         // Klik Kanan (Flag)
         if (isRightClick) {
             board.toggleFlag(row, col);
+            if (listener != null) {
+                listener.onFlagsUpdated(board.getFlaggedCells());
+            }
             return;
         }
         

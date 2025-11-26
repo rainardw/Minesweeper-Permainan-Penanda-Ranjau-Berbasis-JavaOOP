@@ -15,6 +15,7 @@ class MenuFrame extends JFrame {
         this.player = player;
         
         setTitle("Minesweeper - Menu");
+        setIconImage(new ImageIcon("assets/logo.png").getImage());
         setSize(500, 420);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);

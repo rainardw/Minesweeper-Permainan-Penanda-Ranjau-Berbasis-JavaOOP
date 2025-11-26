@@ -5,11 +5,12 @@ import java.awt.event.*;
 class GamePanel extends JPanel {
     private Game game;
     private Board board;
-    private static final int CELL_SIZE = 30;
+    private static final int CELL_SIZE = 40;
     private static final int CELL_PADDING = 2;
     
-    private static final Color COLOR_COVERED = new Color(189, 189, 189);
-    private static final Color COLOR_REVEALED = new Color(215, 215, 215);
+    private static final Color COLOR_COVERED = Color.decode("#96dd11");
+    private static final Color COLOR_REVEALED_1 = Color.decode("#e4c894");
+    private static final Color COLOR_REVEALED_2 = Color.decode("#d4bc94");
     private static final Color COLOR_BOMB = new Color(255, 100, 100);
     private static final Color COLOR_FLAG = new Color(255, 200, 0);
     private static final Color[] NUMBER_COLORS = {
@@ -79,7 +80,8 @@ class GamePanel extends JPanel {
             if (cell.isBomb()) {
                 g.setColor(COLOR_BOMB);
             } else {
-                g.setColor(COLOR_REVEALED);
+                Color revealedColor = ((row + col) % 2 == 0) ? COLOR_REVEALED_1 : COLOR_REVEALED_2;
+                g.setColor(revealedColor);
             }
         } else {
             g.setColor(COLOR_COVERED);

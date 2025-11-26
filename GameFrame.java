@@ -14,11 +14,17 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
     private JButton restartButton;
     private JButton menuButton;
     
+    // Warna hover / pressed
+    final Color minesweeperGreen = Color.decode("#96dd11");
+    final Color pressedGreen = minesweeperGreen.darker();
+    final Color defaultBg = UIManager.getColor("Button.background");
+
     public GameFrame(Player player, Difficulty difficulty) {
         this.player = player;
         this.difficulty = difficulty;
         
         setTitle("Minesweeper - " + difficulty.name() + " [" + player.getUsername() + "]");
+        setIconImage(new ImageIcon("assets/logo.png").getImage());
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
         
@@ -41,31 +47,62 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
         setLayout(new BorderLayout());
         
         // --- TOP PANEL ---
-        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
-        topPanel.setBackground(new Color(230, 230, 230));
+        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
+        topPanel.setBackground(Color.decode("#376238"));
         
-        timerLabel = new JLabel("Time: 10:00"); // Default start
+        timerLabel = new JLabel("Time: " + game.getTimer().getFormattedTime());
         timerLabel.setFont(new Font("Monospaced", Font.BOLD, 18));
-        
-        bombsLabel = new JLabel("Bombs: " + difficulty.getBombCount());
-        bombsLabel.setFont(new Font("Arial", Font.BOLD, 16));
+
+        ImageIcon bombIcon = null;
+        try {
+            bombIcon = new ImageIcon("assets/mine.png");
+            Image scaled = bombIcon.getImage().getScaledInstance(15, 15, Image.SCALE_SMOOTH);
+            bombIcon = new ImageIcon(scaled);
+        } catch (Exception e) {
+            bombIcon = null;
+        }
+    
+        // Left: bombs (mine) count
+        int remainingBombs = difficulty.getBombCount();
+        bombsLabel = new JLabel(" " + remainingBombs);
+        if (bombIcon != null) bombsLabel.setIcon(bombIcon);
+        bombsLabel.setFont(new Font("Monospaced", Font.BOLD, 18));
+        bombsLabel.setForeground(Color.BLACK);
         
         scoreLabel = new JLabel("Score: 0");
-        scoreLabel.setFont(new Font("Arial", Font.BOLD, 16));
-        scoreLabel.setForeground(new Color(0, 100, 0));
+        scoreLabel.setFont(new Font("Monospaced", Font.BOLD, 18));
+        scoreLabel.setForeground(Color.BLACK);
         
         topPanel.add(timerLabel);
-        topPanel.add(bombsLabel);
         topPanel.add(scoreLabel);
+        topPanel.add(bombsLabel);
         
         // --- GAME PANEL ---
         gamePanel = new GamePanel(game);
         
         // --- BOTTOM PANEL ---
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        bottomPanel.setBackground(Color.decode("#376238"));
         
         restartButton = new JButton("Restart");
         menuButton = new JButton("Menu");
+
+
+        // Basic button look
+        restartButton.setOpaque(true);
+        restartButton.setFocusPainted(false);
+        restartButton.setBorderPainted(false);
+        restartButton.setForeground(Color.BLACK);
+        restartButton.setBackground(defaultBg);
+        menuButton.setOpaque(true);
+        menuButton.setFocusPainted(false);
+        menuButton.setBorderPainted(false);
+        menuButton.setForeground(Color.BLACK);
+        menuButton.setBackground(defaultBg);
+
+        restartButton.addMouseListener(hoverPress);
+        menuButton.addMouseListener(hoverPress);
+        
         
         restartButton.addActionListener(e -> restartGame());
         
@@ -98,12 +135,36 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
         gamePanel.setGame(game);
         gamePanel.repaint();
         
-        timerLabel.setText("Time: 10:00");
+        timerLabel.setText("Time: " + game.getTimer().getFormattedTime());
         scoreLabel.setText("Score: 0");
-        bombsLabel.setText("Bombs: " + difficulty.getBombCount());
+        bombsLabel.setText("" + difficulty.getBombCount());
     }
     
     // --- IMPLEMENTASI GameListener ---
+
+    // Helper untuk memasang efek hover/press
+    MouseAdapter hoverPress = new MouseAdapter() {
+        @Override
+        public void mouseEntered(MouseEvent e) {
+            ((JButton) e.getComponent()).setBackground(minesweeperGreen);
+        }
+        @Override
+        public void mouseExited(MouseEvent e) {
+            ((JButton) e.getComponent()).setBackground(defaultBg);
+        }
+        @Override
+        public void mousePressed(MouseEvent e) {
+            ((JButton) e.getComponent()).setBackground(pressedGreen);
+        }
+        @Override
+        public void mouseReleased(MouseEvent e) {
+            JButton b = (JButton) e.getComponent();
+            // jika kursor masih di atas tombol setelah release, kembali ke hover warna
+            Point p = SwingUtilities.convertPoint(b, e.getPoint(), b);
+            if (b.contains(p)) b.setBackground(minesweeperGreen);
+            else b.setBackground(defaultBg);
+        }
+    };
     
     @Override
     public void onGameStateChanged(Game.GameState newState) {
@@ -147,6 +208,10 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
     @Override
     public void onCellRevealed(int row, int col) {
         gamePanel.repaint();
+    }
+
+    @Override
+    public void onFlagsUpdated(int flags) {
         updateBombsLabel();
     }
     
@@ -174,6 +239,6 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
     
     private void updateBombsLabel() {
         int remainingBombs = difficulty.getBombCount() - game.getBoard().getFlaggedCells();
-        bombsLabel.setText("Bombs: " + remainingBombs);
+        bombsLabel.setText(" " + remainingBombs);
     }
 }

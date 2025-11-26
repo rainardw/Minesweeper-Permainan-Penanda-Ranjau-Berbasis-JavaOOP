@@ -1,6 +1,6 @@
 public class GameTimer extends Thread {
-    private int remainingTime; // Waktu tersisa
-    private int timeLimit;
+    private int remainingTime;
+    // private int timeLimit;
     private boolean running;
     private boolean paused;
     private GameTimerListener listener;
@@ -11,7 +11,7 @@ public class GameTimer extends Thread {
     }
     
     public GameTimer(int timeLimitInSeconds, GameTimerListener listener) {
-        this.timeLimit = timeLimitInSeconds;
+        // this.timeLimit = timeLimitInSeconds;
         this.remainingTime = timeLimitInSeconds;
         this.running = false;
         this.paused = false;

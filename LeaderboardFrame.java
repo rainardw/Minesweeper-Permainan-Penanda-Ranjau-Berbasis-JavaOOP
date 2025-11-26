@@ -8,6 +8,7 @@ class LeaderboardFrame extends JDialog {
     
     public LeaderboardFrame(JFrame parent) {
         super(parent, "Leaderboard", true);
+        setIconImage(new ImageIcon("assets/logo.png").getImage());
         
         leaderboard = new Leaderboard();
         
