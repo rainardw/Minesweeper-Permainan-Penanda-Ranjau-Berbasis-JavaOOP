@@ -139,7 +139,7 @@ class MenuFrame extends JFrame {
         button.setMaximumSize(new Dimension(300, 50));
         button.setAlignmentX(Component.CENTER_ALIGNMENT);
         button.setFont(new Font("Arial", Font.PLAIN, 14));
-        button.setFocusPainted(false); // Menghilangkan border fokus saat diklik
+        button.setFocusPainted(false);
         return button;
     }
     

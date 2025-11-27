@@ -191,11 +191,7 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
                 break;
                 
             case TIME_UP:
-                gamePanel.repaint();
-                JOptionPane.showMessageDialog(this,
-                    "Time is up!\nScore: 0",
-                    "Game Over",
-                    JOptionPane.WARNING_MESSAGE);
+                onTimeUp();
                 break;
         }
     }
@@ -234,7 +230,11 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
     
     @Override
     public void onTimeUp() {
-        // Handled by onGameStateChanged via Game class
+        gamePanel.repaint();
+                JOptionPane.showMessageDialog(this,
+                    "Time is up!\nScore: 0",
+                    "Game Over",
+                    JOptionPane.WARNING_MESSAGE);
     }
     
     private void updateBombsLabel() {
