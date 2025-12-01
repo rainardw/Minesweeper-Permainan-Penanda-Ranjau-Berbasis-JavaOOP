@@ -1,4 +1,5 @@
 class Game {
+    
     private Player player;
     private Board board;
     private GameTimer timer;
@@ -6,12 +7,10 @@ class Game {
     private GameState gameState;
     private boolean firstClick;
     
-    private int currentScore; // Skor saat ini (akumulasi kotak terbuka)
+    private int currentScore; // Skor real-time selama permainan
     private int finalScore;   // Skor akhir (setelah dikali rumus)
     
     private GameListener listener;
-    
-    // Konstanta Logika Baru
     private int GAME_DURATION = 600; // 10 Menit
     private static final int POINTS_PER_CELL = 10; // Poin per kotak
     
@@ -25,7 +24,7 @@ class Game {
     
     public interface GameListener {
         void onGameStateChanged(GameState newState);
-        void onScoreUpdated(int score); // Listener untuk update UI real-time
+        void onScoreUpdated(int score); 
         void onCellRevealed(int row, int col);
         void onFlagsUpdated(int flags);
     }
@@ -40,14 +39,12 @@ class Game {
         this.finalScore = 0;
         this.GAME_DURATION = Math.max(1, this.difficulty.getTimeLimit());
         
-        // Initialize board
         board = new Board(difficulty);
         
-        // Initialize timer (Fixed 600 detik)
         timer = new GameTimer(GAME_DURATION, new GameTimer.GameTimerListener() {
             @Override
             public void onTimerUpdate(int remainingTime) {
-                // UI update ditangani oleh GameFrame melalui polling atau listener terpisah
+              
             }
             
             @Override
@@ -74,10 +71,8 @@ class Game {
             return;
         }
         
-        // Jangan lakukan apa-apa jika sudah terbuka atau dibendera
-        if (cell.isRevealed() || cell.isFlagged()) return;
         
-        // Klik Pertama: Generate Bom & Mulai Timer
+        if (cell.isRevealed() || cell.isFlagged()) return;
         if (firstClick) {
             board.placeBombs(row, col);
             timer.start();
@@ -92,20 +87,15 @@ class Game {
             return;
         }
         
-        // --- LOGIKA SKOR REAL-TIME ---
         int cellsBefore = board.getRevealedCells();
-        
-        // Buka sel (bisa recursive flood fill)
         board.revealCell(row, col);
         
         int cellsAfter = board.getRevealedCells();
         int openedCount = cellsAfter - cellsBefore;
         
         if (openedCount > 0) {
-            // Update skor: 10 poin per kotak
             currentScore += (openedCount * POINTS_PER_CELL);
             
-            // Beritahu UI untuk update label skor
             if (listener != null) {
                 listener.onScoreUpdated(currentScore);
                 listener.onCellRevealed(row, col);
@@ -127,35 +117,43 @@ class Game {
     }
     
     private void handleLoss() {
-        gameState = GameState.LOST;
-        timer.stopTimer();
+    gameState = GameState.LOST;
+    timer.stopTimer();
+    board.revealAllBombs();
+    calculateFinalScore(); 
+    saveScore();
+    
+    notifyGameStateChanged();
+}
+
+private void handleTimeUp() {
+    if (gameState == GameState.PLAYING) {
+        gameState = GameState.TIME_UP;
         board.revealAllBombs();
-        finalScore = 0; // Kalah dapat 0
+        calculateFinalScore();
+        saveScore();
+        
         notifyGameStateChanged();
     }
+}
     
-    private void handleTimeUp() {
-        if (gameState == GameState.PLAYING) {
-            gameState = GameState.TIME_UP;
-            board.revealAllBombs();
-            finalScore = 0;
-            notifyGameStateChanged();
-        }
-    }
-    
-    // Rumus: (Sisa Waktu + Skor Saat Ini) * 5
-    private void calculateFinalScore() {
+private void calculateFinalScore() {
         int remainingTime = timer.getRemainingTime();
         finalScore = (remainingTime + currentScore) * 5;
+        
+        System.out.println("=== CALCULATE FINAL SCORE ===");
+        System.out.println("Current Score: " + currentScore);
+        System.out.println("Remaining Time: " + remainingTime + " seconds");
+        System.out.println("Formula: (" + remainingTime + " + " + currentScore + ") * 5");
+        System.out.println("Final Score: " + finalScore);
+        System.out.println("=============================");
     }
     
     private void saveScore() {
         PlayerDatabase database = PlayerDatabase.getInstance();
         
-        // 1. Simpan History
         database.addGameHistory(player.getIdPlayer(), finalScore);
         
-        // 2. Update High Score Lokal & DB
         int latestHighScore = database.getHighScoreFromHistory(player.getIdPlayer());
         player.setHighScore(latestHighScore);
         

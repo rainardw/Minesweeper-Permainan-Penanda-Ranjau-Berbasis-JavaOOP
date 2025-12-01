@@ -1,9 +1,9 @@
 public class GameTimer extends Thread {
     private int remainingTime;
-    // private int timeLimit;
     private boolean running;
     private boolean paused;
     private GameTimerListener listener;
+    private GameTimerListener externalListener;
     
     public interface GameTimerListener {
         void onTimerUpdate(int remainingTime);
@@ -11,11 +11,11 @@ public class GameTimer extends Thread {
     }
     
     public GameTimer(int timeLimitInSeconds, GameTimerListener listener) {
-        // this.timeLimit = timeLimitInSeconds;
         this.remainingTime = timeLimitInSeconds;
         this.running = false;
         this.paused = false;
         this.listener = listener;
+        this.externalListener = null;
     }
     
     @Override
@@ -25,32 +25,47 @@ public class GameTimer extends Thread {
         while (running && remainingTime > 0) {
             if (!paused) {
                 try {
-                    Thread.sleep(1000); // Tunggu 1 detik
-                    remainingTime--;    // Kurangi waktu
+                    Thread.sleep(1000); 
+                    remainingTime--;    
                     
                     if (listener != null) {
                         listener.onTimerUpdate(remainingTime);
                     }
                     
+                    if (externalListener != null) {
+                        externalListener.onTimerUpdate(remainingTime);
+                    }
+                    
                     if (remainingTime <= 0) {
                         running = false;
+                        
                         if (listener != null) {
                             listener.onTimeUp();
+                        }
+                        
+                        if (externalListener != null) {
+                            externalListener.onTimeUp();
                         }
                     }
                 } catch (InterruptedException e) {
                     running = false;
+                    Thread.currentThread().interrupt(); 
                 }
             } else {
                 try {
-                    Thread.sleep(100); // Sedikit delay saat pause
+                    Thread.sleep(100); 
                 } catch (InterruptedException e) {
                     running = false;
+                    Thread.currentThread().interrupt();
                 }
             }
         }
     }
 
+    public void setExternalListener(GameTimerListener externalListener) {
+        this.externalListener = externalListener;
+    }
+    
     public void setListener(GameTimerListener listener) {
         this.listener = listener;
     }
@@ -79,5 +94,9 @@ public class GameTimer extends Thread {
     
     public boolean isRunning() {
         return running;
+    }
+    
+    public boolean isPaused() {
+        return paused;
     }
 }

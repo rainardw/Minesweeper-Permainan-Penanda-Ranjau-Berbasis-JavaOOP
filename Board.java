@@ -38,16 +38,12 @@ public class Board {
         while (bombsPlaced < bombCount) {
             int row = random.nextInt(rows);
             int col = random.nextInt(cols);
-            
-            // Don't place bomb on first clicked cell or already bombed cell
             if ((row == excludeRow && col == excludeCol) || grid[row][col].isBomb()) {
                 continue;
             }
             
             grid[row][col].setBomb(true);
             bombsPlaced++;
-            
-            // Update adjacent cells count
             updateAdjacentCounts(row, col);
         }
     }
@@ -86,7 +82,6 @@ public class Board {
         cell.setRevealed(true);
         revealedCells++;
         
-        // If cell has no adjacent bombs, reveal neighbors (flood fill)
         if (cell.getAdjacentBombs() == 0 && !cell.isBomb()) {
             for (int i = -1; i <= 1; i++) {
                 for (int j = -1; j <= 1; j++) {
@@ -113,8 +108,8 @@ public class Board {
         }
     }
     
-    public boolean isWin() {
-        // Win condition: all non-bomb cells are revealed
+        public boolean isWin() {
+         
         int totalCells = rows * cols;
         return revealedCells == (totalCells - bombCount);
     }
@@ -129,7 +124,6 @@ public class Board {
         }
     }
     
-    // Getters
     public int getRows() {
         return rows;
     }
