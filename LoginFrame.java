@@ -1,6 +1,5 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
 
 class LoginFrame extends JFrame {
     private JTextField usernameField;

@@ -256,7 +256,7 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         
         // Message
-        JLabel messageLabel = new JLabel("<html><div style='text-align: center;'>" + message + "</div></html>");
+        JLabel messageLabel = new JLabel(message);
         messageLabel.setFont(new Font("Arial", Font.PLAIN, 14));
         messageLabel.setForeground(Color.WHITE.darker());
         messageLabel.setAlignmentX(Component.CENTER_ALIGNMENT);

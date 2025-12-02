@@ -3,7 +3,7 @@ public class GameTimer extends Thread {
     private boolean running;
     private boolean paused;
     private GameTimerListener listener;
-    private GameTimerListener externalListener;
+    // private GameTimerListener externalListener;
     
     public interface GameTimerListener {
         void onTimerUpdate(int remainingTime);
@@ -15,7 +15,7 @@ public class GameTimer extends Thread {
         this.running = false;
         this.paused = false;
         this.listener = listener;
-        this.externalListener = null;
+        // this.externalListener = null;
     }
     
     @Override
@@ -32,9 +32,9 @@ public class GameTimer extends Thread {
                         listener.onTimerUpdate(remainingTime);
                     }
                     
-                    if (externalListener != null) {
-                        externalListener.onTimerUpdate(remainingTime);
-                    }
+                    // if (externalListener != null) {
+                    //     externalListener.onTimerUpdate(remainingTime);
+                    // }
                     
                     if (remainingTime <= 0) {
                         running = false;
@@ -43,9 +43,9 @@ public class GameTimer extends Thread {
                             listener.onTimeUp();
                         }
                         
-                        if (externalListener != null) {
-                            externalListener.onTimeUp();
-                        }
+                        // if (externalListener != null) {
+                        //     externalListener.onTimeUp();
+                        // }
                     }
                 } catch (InterruptedException e) {
                     running = false;
@@ -62,9 +62,9 @@ public class GameTimer extends Thread {
         }
     }
 
-    public void setExternalListener(GameTimerListener externalListener) {
-        this.externalListener = externalListener;
-    }
+    // public void setExternalListener(GameTimerListener externalListener) {
+    //     this.externalListener = externalListener;
+    // }
     
     public void setListener(GameTimerListener listener) {
         this.listener = listener;
