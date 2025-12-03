@@ -30,7 +30,6 @@ class LoginFrame extends JFrame {
     }
     
     private void initComponents() {
-
         JPanel mainPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {

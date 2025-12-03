@@ -7,6 +7,7 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
     private Difficulty difficulty;
     private Game game;
     private GamePanel gamePanel;
+    private AudioManager audioManager;
     
     private JLabel timerLabel;
     private JLabel bombsLabel;
@@ -14,7 +15,6 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
     private JButton restartButton;
     private JButton menuButton;
     
-    // Warna hover / pressed
     final Color minesweeperGreen = Color.decode("#96dd11");
     final Color pressedGreen = minesweeperGreen.darker();
     final Color darkGreen = Color.decode("#376238");
@@ -23,6 +23,7 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
     public GameFrame(Player player, Difficulty difficulty) {
         this.player = player;
         this.difficulty = difficulty;
+        this.audioManager = AudioManager.getInstance();
         
         setTitle("Minesweeper - " + difficulty.name() + " [" + player.getUsername() + "]");
         setIconImage(new ImageIcon("assets/logo.png").getImage());
@@ -32,9 +33,18 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
         initGame();
         initComponents();
         
+        audioManager.playBackgroundMusic();
+        
         pack();
         setLocationRelativeTo(null);
         setVisible(true);
+        
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent e) {
+                audioManager.stopBackgroundMusic();
+            }
+        });
     }
     
     private void initGame() {
@@ -45,12 +55,11 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
     private void initComponents() {
         setLayout(new BorderLayout());
         
-        // --- TOP PANEL ---
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
         topPanel.setBackground(darkGreen);
         
         timerLabel = new JLabel("Time: " + game.getTimer().getFormattedTime());
-        timerLabel.setFont(new Font("Segoe UI Emoji", Font.BOLD, 18));
+        timerLabel.setFont(new Font("Monospaced", Font.BOLD, 18));
 
         ImageIcon bombIcon = null;
         try {
@@ -64,21 +73,19 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
         int remainingBombs = difficulty.getBombCount();
         bombsLabel = new JLabel(" " + remainingBombs);
         if (bombIcon != null) bombsLabel.setIcon(bombIcon);
-        bombsLabel.setFont(new Font("Segoe UI Emoji", Font.BOLD, 18));
+        bombsLabel.setFont(new Font("Monospaced", Font.BOLD, 18));
         bombsLabel.setForeground(Color.BLACK);
         
         scoreLabel = new JLabel("Score: 0");
-        scoreLabel.setFont(new Font("Segoe UI Emoji", Font.BOLD, 18));
+        scoreLabel.setFont(new Font("Monospaced", Font.BOLD, 18));
         scoreLabel.setForeground(Color.BLACK);
         
         topPanel.add(timerLabel);
         topPanel.add(scoreLabel);
         topPanel.add(bombsLabel);
         
-        // --- GAME PANEL ---
         gamePanel = new GamePanel(game);
         
-        // --- BOTTOM PANEL ---
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
         bottomPanel.setBackground(darkGreen);
         
@@ -106,6 +113,7 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
             
             if (confirm) {
                 game.getTimer().stopTimer();
+                audioManager.stopBackgroundMusic();
                 dispose();
                 new MenuFrame(player);
             }
@@ -121,6 +129,8 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
     
     private void restartGame() {
         game.getTimer().stopTimer();
+        audioManager.stopBackgroundMusic(); 
+        
         initGame();
         gamePanel.setGame(game);
         gamePanel.repaint();
@@ -128,6 +138,8 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
         timerLabel.setText("Time: " + game.getTimer().getFormattedTime());
         scoreLabel.setText("Score: 0");
         bombsLabel.setText("" + difficulty.getBombCount());
+        
+        audioManager.playBackgroundMusic();
     }
     
     MouseAdapter hoverPress = new MouseAdapter() {
@@ -158,8 +170,11 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
         
         switch (newState) {
             case WON:
+                audioManager.stopBackgroundMusic();
+                audioManager.playWinSound();
+                
                 showGameOverDialog(
-                   "VICTORY!",
+                    "VICTORY!",
                     String.format(
                         "Cells Opened: %d\n" +
                         "Base Score: %d\n" +
@@ -176,6 +191,9 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
                 break;
                 
             case LOST:
+                audioManager.stopBackgroundMusic();
+                audioManager.playExplosionSound();
+                
                 showGameOverDialog(
                     "GAME OVER",
                     String.format(
@@ -193,6 +211,9 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
                 break;
                 
             case TIME_UP:
+                audioManager.stopBackgroundMusic();
+                audioManager.playLoseSound();
+                
                 showGameOverDialog(
                     "TIME'S UP!",
                     String.format(
@@ -218,7 +239,6 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
         
         final boolean[] result = {false};
         
-        // Main panel dengan gradient
         JPanel mainPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -226,7 +246,6 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
                 Graphics2D g2d = (Graphics2D) g;
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 
-                // Gradient background
                 GradientPaint gradient = new GradientPaint(
                     0, 0, darkGreen,
                     0, getHeight(), minesweeperGreen
@@ -300,7 +319,6 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
         dialog.setUndecorated(true);
         dialog.setLayout(new BorderLayout());
         
-        // Main panel dengan gradient
         JPanel mainPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -308,7 +326,6 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
                 Graphics2D g2d = (Graphics2D) g;
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 
-                // Gradient background
                 GradientPaint gradient = new GradientPaint(
                     0, 0, accentColor.darker(),
                     0, getHeight(), accentColor
@@ -346,7 +363,6 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
         headerPanel.add(Box.createRigidArea(new Dimension(0, 10)));
         headerPanel.add(titleLabel);
         
-        // Message panel dengan background semi-transparent
         JPanel messagePanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -354,7 +370,6 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
                 Graphics2D g2d = (Graphics2D) g;
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 
-                // Semi-transparent white background
                 g2d.setColor(new Color(255, 255, 255, 200));
                 g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 15, 15);
             }
@@ -387,6 +402,7 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
         menuButton.addActionListener(e -> {
             dialog.dispose();
             game.getTimer().stopTimer();
+            audioManager.stopBackgroundMusic();
             dispose();
             new MenuFrame(player);
         });
@@ -456,11 +472,15 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
     
     @Override
     public void onCellRevealed(int row, int col) {
+
+        audioManager.playClickSound();
         gamePanel.repaint();
     }
 
     @Override
     public void onFlagsUpdated(int flags) {
+    
+        audioManager.playFlagSound();
         updateBombsLabel();
     }
     
@@ -479,6 +499,7 @@ class GameFrame extends JFrame implements Game.GameListener, GameTimer.GameTimer
     
     @Override
     public void onTimeUp() {
+        onGameStateChanged(Game.GameState.TIME_UP);
     }
     
     private void updateBombsLabel() {
