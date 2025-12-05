@@ -8,12 +8,14 @@ public class Main {
             e.printStackTrace();
         }
         
-        // Run GUI on Event Dispatch Thread
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                new LoginFrame();
-            }
-        });
+                // Run GUI on Event Dispatch Thread
+        // SwingUtilities.invokeLater(new Runnable() {
+        //     @Override
+        //     public void run() {
+        //         new LoginFrame();
+        //     }
+        // });
+        
+        SwingUtilities.invokeLater(() -> new LoginFrame());
     }
 }
